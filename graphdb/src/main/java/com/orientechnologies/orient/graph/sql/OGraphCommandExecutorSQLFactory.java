@@ -79,7 +79,6 @@ public class OGraphCommandExecutorSQLFactory implements OCommandExecutorSQLFacto
     }
     //I have to set it again on ThreadLocal because the getRawGraph() may have set a closed db in the threadlocal
     ODatabaseRecordThreadLocal.INSTANCE.set((ODatabaseDocumentInternal) database);
-    System.out.println("DAtabse closed? "+database.isClosed());
     return new OrientGraph((ODatabaseDocumentTx) database, autoStartTx);
   }
 
