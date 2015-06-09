@@ -172,7 +172,22 @@ public class ORoadRunnerGraphImporter {
   }
 
   private void start() {
+    ODatabaseDocumentTx db = new ODatabaseDocumentTx(url);
 
+    try {
+      try {
+        if (!db.exists()) {
+          db.create();
+        }
+      } catch (Exception e) {
+      }
+      db.open(username, password);
+    } finally {
+      db.close();
+    }
+
+    createType("V", null, true);
+    createType("E", null, false);
     for (int i = 0; i < nThreads; i++) {
       new QueueThread().start();
     }
@@ -233,14 +248,22 @@ public class ORoadRunnerGraphImporter {
     db.open(username, password);
     try {
       OSchemaProxy schema = db.getMetadata().getSchema();
-      if (!schema.existsClass(superclass)) {
-        schema.createClass(superclass);
+
+      OClass clazz;
+      if (schema.existsClass(name)) {
+        clazz = schema.getClass(name);
+      } else {
+        if (superclass != null) {
+          if (!schema.existsClass(superclass)) {
+            schema.createClass(superclass);
+          }
+          OClass superclazz = schema.getClass(superclass);
+          clazz = schema.createClass(name, superclazz);
+        } else {
+          clazz = schema.createClass(name);
+        }
       }
-      OClass superclazz = schema.getClass(superclass);
-
-      OClass clazz = schema.createClass(name, superclazz);
       if (index) {
-
         clazz.createProperty(vertexIdFieldName, vertexIdType);
         clazz.createIndex(getIndexName(name), OClass.INDEX_TYPE.UNIQUE_HASH_INDEX, vertexIdFieldName);
       }
@@ -299,19 +322,4 @@ public class ORoadRunnerGraphImporter {
     }
   }
 
-  public String getVertexIdFieldName() {
-    return vertexIdFieldName;
-  }
-
-  public void setVertexIdFieldName(String vertexIdFieldName) {
-    this.vertexIdFieldName = vertexIdFieldName;
-  }
-
-  public OType getVertexIdType() {
-    return vertexIdType;
-  }
-
-  public void setVertexIdType(OType vertexIdType) {
-    this.vertexIdType = vertexIdType;
-  }
 }
